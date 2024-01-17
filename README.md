@@ -3,6 +3,7 @@
 ============================
 DAY1
 ============================
+-------------------- 2장 시작 --------------------
 
 mkdir jdj
 python -m venv .venv
@@ -159,3 +160,126 @@ DAY3
 1. 템플릿의 기초가 될 html을 만들자 (template/base.html, template/pybo/가 아님)
 2. base.html은 내가 잘 아는 html 기본형식(doctype html - head - body)인데, 맨 위에 {% load static %}, body부분에 {% block content %} - {% endblock %} 형식으로 컨텐츠들을 디스플레이함
 3. block content에 들어갈 템플릿들은 html의 시작에 {% extends 'base.html'%} {% block content %} 를 쓰고, 마지막 라인에 {% endblock %} 을 써준다
+
+============================
+DAY4
+============================
+
+<Form>
+Form: 페이지 요청 시, 전달되는 파라미터들을 쉽게 관리하기 위해 사용하는 Class
+1. form이 보일 화면으로 가는 버튼 만들기
+<a href="{% url 'pybo:question_create' %}">질문 등록</a>
+
+2. url 매핑
+   path('question/create/', views.question_create, name='question_create'),
+
+3. forms.py 만들기 (mysite/pybo/forms.py)
+
+4. 패키지 import
+   from django import forms
+   from pybo.models import Question
+
+5. forms.ModelForm vs forms.Form
+   ModelForm은 model과 연결된 폼으로 폼을 저장하면 연결된 모델의 데이터를 저장할 수 있다, 모델 폼은 inner class인 Meta class가 반드시 필요하다. Meta class에는 사용할 모델과 속성을 적어야한다.
+
+   class QuestionForm(forms.ModelForm):
+   class Meta:
+   model = Question # 사용할 모델
+   fields = ['subject', 'content'] # QuestionForm에서 사용할 Question 모델의 속성
+
+6. 뷰 함수 만들기
+   from .forms import QuestionForm
+
+   def question_create(req):
+   form = QuestionForm
+
+   return render(req, "pybo/question_form.html", {'form': form})
+
+req: 함수의 첫번째 매개변수, 클라이언트로부터의 정보를 담고있다. question_list에 있는 pybo/question/create/ 로 이동하는 a태그를 클릭하면, <WSGIRequest: GET '/pybo/question/create/'> 라는 정보를 담게 된다.
+
+render(): 매개변수를 토대로 화면을 렌더링하는 django 내장 함수. render함수는 req, 렌더링할 경로, 템플릿에 전달할 데이터가 필요하다. 템플릿에 전달할 데이터는 주로 딕셔너리 형태로 이루어져있는데, 이는 모델 인스턴스, 쿼리셋, 폼 인스턴스, 기타 컨텍스트 데이터 등이 될 수있다. 뷰 함수에서 템플릿으로 이러한 데이터들을 전달해야 템플릿에서 완성된 화면을 사용자에게 전달할 수 있다.
+
+7. 뷰 함수 완성
+   def question_create(req):
+
+   # question_form의 submit은 action값이 없으므로, default인 현재페이지
+
+   # 따라서 저장하기 버튼을 클릭하면, question_create 뷰 함수가 호출되고 req.method == 'POST'이다.
+
+   if req.method == 'POST':
+   form = QuestionForm(req.POST)
+
+   if form.is_valid(): # 폼이 유효하다면
+   question = form.save(commit=False) # 모델 임시 저장
+   question.create_date = timezone.now()
+   question.save() # 데이터 저장
+   return redirect('pybo:index')
+
+   else:
+   question = QuestionForm() # request 메서드가 GET일 때
+
+   context = {'form': form}
+
+   return render(req, 'pybo/question/create', context)
+
+============================
+DAY5 2장 끝
+============================
+
+<Form 2>
+
+form widget: form에 스타일 적용하는 방법, {{ form.as_p }}를 써서 자동으로 폼을
+만들때 사용하기 좋다.
+[projects/mysite/pybo/forms.py]
+class QuestionForm(forms.ModelForm):
+class Meta:
+model = Question
+fields = ['subject', 'content']
+widgets = {
+'subject': forms.TextInput(attrs={'class': 'form-control'}),
+'content': forms.Textarea(attrs={'class': 'form-control', 'rows': 10})
+}
+
+하지만 {{ form.as_p }}를 통해 만든 자동 폼은 디자인 수정이 귀찮고 제한적이다.
+따라서 수동으로 폼을 만드는 방법을 알아야한다
+
+1. 템플릿 만들기(question_form.html을 수정할거임)
+   a. 에러 체크
+   {% if form.errors %}
+   <div class='alert alert-danger' role='alert'> 
+        {% form field in form %}
+        {% if field.errors %}
+        <div>
+            <strong>{{ field.label }}</strong>
+            {{ field.errors }}
+        </div>
+        {% endif %}
+        {% endfor %}
+   </div>
+   {% endif %}
+
+   b. form 만들기
+   <div class='mb-3'>
+        <label for='subject' class='form-label'>제목</label>
+        <input type='text' class='form-control' name='subject' id='subject' value='{{ form.subject.value|default_if_none:''}}'> 
+   </div>
+   <div>
+        <label for='content' class='form-label'>내용</label>
+        <textarea class='form-control' name='content id='content'  rows='10'>{{form.content.value|default_if_none:''}}</textarea>
+   </div>
+
+   총 두단계,에러체킹과 실제 폼 제작
+   에러체킹은 만들고자 하는 폼의 개수에 따라 각 폼이 비었는지 확인하는 작업이다. 뭔가 조건을 더 걸어서 할 수도 있을거같은 느낌이드는데..
+   form 만드는건 (라벨 + 인풋) 인데, 인풋 부분에서 ~.value|default_if_none:'' 이 부분이 특수하다. 해석하자면 ~의 value가 none 일 때의 기본값은:'' 이라는 뜻, 즉 빈값이면 None 대신 공백으로 표시하라는 의미의 <템플릿 필터> 이다
+
+-------------------- 2장 종료 --------------------
+-------------------- 3장 시작 --------------------
+
+<내비게이션 바>
+
+부트스트랩의 내비게이션 바 사용, 음...부트스트랩 클래스들을 마구때려박아서 navbar를 만들었음. 잘라놨다가 복붙해서 쓰는게 좋아보임
+
+<!-- <include>
+
+django에는 템플릿의 특정 위치에 다른 템플릿을 삽입할 수 있는 include 태그가 있다.
+템플릿에서 특정 구간이 반복적으로 사용될 때 중복을 없애기 위해 사용. -->
