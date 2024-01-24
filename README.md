@@ -56,7 +56,7 @@ python3 manage.py sqlmigrate
 python3 manage.py migrate
 python3 manage.py shell
 
-<Question 생성 조회 수정 삭제>
+<Question모델 생성 조회 수정 삭제>
 from pybo.models import Question, Answer
 from django.utils import timezone
 
@@ -279,7 +279,77 @@ widgets = {
 
 부트스트랩의 내비게이션 바 사용, 음...부트스트랩 클래스들을 마구때려박아서 navbar를 만들었음. 잘라놨다가 복붙해서 쓰는게 좋아보임
 
-<!-- <include>
+<include>
 
 django에는 템플릿의 특정 위치에 다른 템플릿을 삽입할 수 있는 include 태그가 있다.
-템플릿에서 특정 구간이 반복적으로 사용될 때 중복을 없애기 위해 사용. -->
+템플릿에서 특정 구간이 반복적으로 사용될 때 중복을 없애기 위해 사용.
+
+navbar.html 을 base.html에 include 하는법
+
+1. 원하는 위치에 {% include 'navbar.html' %} 하면 끝
+
+<Paging>
+
+django에는 페이징을 위한 클래스가 있음.
+views.py에서 index(question list들 보여지는 화면) 함수에 페이징을 적용하자.
+
+from django.core.paginator import Paginator
+
+def index(request):
+
+page = request.GET.get('page', '1')
+
+# 페이지, GET방식으로 호출된 URL에서 page값을 가져오겠다, page값이 없을 때는 default로 1을 갖는다
+
+question_list = Question.objects.order_by('-create_date')
+paginator = Paginator(question_list, 10)
+
+# Paginator 클래스, question_list의 데이터를 10개씩 보여주겠다(페이지 당)
+
+page_obj = paginator.get_page(page)
+
+# 페이징 객체 생성, 위의 url로 부터 가져온 page값을 토대로 만든 페이징 객체이다. 이렇게 하면 장고는 내부적으로는 데이터 전체를 조회하지 않고 해당 페이지의 데이터만 조회하도록 쿼리가 변경된다.
+
+context = {'question_list': page_obj}
+
+    return render(request, 'pybo/question_list.html', context)
+
+템플릿에 페이징 적용
+{% for page_number in question_list.paginator.page_range %}
+{% if page_number == question_list.number %}
+
+<li class="page-item active" aria-current="page">
+<a class="page-link" href="?page={{ page_number }}">{{ page_number }}</a>
+</li>
+{% else %}
+<li class="page-item">
+<a class="page-link" href="?page={{ page_number }}">{{ page_number }}</a>
+</li>
+{% endif %}
+{% endfor %}
+
+<Template 필터>
+
+1. templatetags/ 만들기
+   projects/mysite/pybo/templatetags
+2. pybo_filter.py 만들기
+   from django import template
+
+   register = template.Library()
+
+   @register.filter
+   def sub(value, arg): # 템플릿필터 테스팅용 함수,
+   return value - arg # value - arg 값을 반환한다
+
+3. 템플릿필터 적용
+   {% extends 'base.html' %}
+   {% load pybo_filter %} # pybo_filter.py는 반드시 앱 디렉터리 하위에 생성해야함
+   ...
+
+   <!-- 번호 = 전체건수 - 시작인덱스 - 현재인덱스 + 1 -->
+
+   {{ question_list.paginator.count|sub:question_list.start_index|sub:forloop.counter0|add:1 }}
+
+   question_list.paginator.count = 전체 건수
+   question_list.start_index = 시작 인덱스
+   forloop.counter0 = 현재 인덱스
