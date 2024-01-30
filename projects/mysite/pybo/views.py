@@ -20,6 +20,7 @@ def index(req):
 def detail(req, question_id):
     question = get_object_or_404(Question, pk=question_id)
     context = {"question": question}
+    print("--------------------", question)
     return render(req, "pybo/question_detail.html", context)
 
 
@@ -35,6 +36,7 @@ def answer_create(req, question_id):
             answer.create_date = timezone.now()
             answer.question = question
             answer.save()
+            print("----answer----", answer)
             return redirect("pybo:detail", question_id=question.id)
     else:
         return HttpResponseNotAllowed("Only POST is possible.")

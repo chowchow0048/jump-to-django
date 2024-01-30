@@ -21,7 +21,6 @@
                 {% if question.answer_set.count > 0 %}
                 <span class="text-danger small mx-2">{{ question.answer_set.count }}</span>
                 {% endif %}
-                <!-- <a href="{% url 'pybo:detail' question.id %}">{{ question.subject }}</a> -->
             </td>
             <td>{{ question.create_date }}</td>
         </tr>
@@ -77,12 +76,10 @@
         </li>
         {% endif %}
         <!-- 마지막페이지 -->
-        {% if question_list.number != question_list.num_pages %}
-        <li class="page-item ">
-            <a class="page-link" href="?page={{ question_list.end_index }}">마지막</a>
+        {% if question_list.number != question_list.paginator.num_pages %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ question_list.paginator.num_pages }}">마지막</a>
         </li>
-        마지막
-        {{question_list.paginator.num_pages}}
         {% endif %}
     </ul>
     <a href="{% url 'pybo:question_create' %}" class="btn btn-primary mx-10">질문 등록</a>
