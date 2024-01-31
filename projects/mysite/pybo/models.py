@@ -24,7 +24,7 @@ class Answer(models.Model):
 
     #
     question = models.ForeignKey(
-        Question, on_delete=models.CASCADE, related_name="answers"
+        Question, on_delete=models.CASCADE, related_name="answer_set"
     )
     content = models.TextField()
     create_date = models.DateTimeField()

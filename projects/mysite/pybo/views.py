@@ -36,7 +36,8 @@ def answer_create(req, question_id):
             answer.create_date = timezone.now()
             answer.question = question
             answer.save()
-            print("----answer----", answer)
+            print("----question----", question.content, question.answer_set)
+            print("----answer----", answer.content)
             return redirect("pybo:detail", question_id=question.id)
     else:
         return HttpResponseNotAllowed("Only POST is possible.")
@@ -59,7 +60,7 @@ def question_create(req):
     # question_form의 submit은 action값이 없으므로, default인 현재페이지
     # 따라서 저장하기 버튼을 클릭하면, question_create 뷰 함수가 호출되고 req.method == 'POST'이다.
     if req.method == "POST":
-        print(req.POST)
+        # print(req.POST)
         form = QuestionForm(req.POST)
         if form.is_valid():  # 폼이 유효하다면
             question = form.save(commit=False)  # 임시 저장하여 question 객체를리턴 받는다
