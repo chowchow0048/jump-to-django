@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.models import User
 
 
 class Question(models.Model):
@@ -7,9 +8,11 @@ class Question(models.Model):
     를 속성으로 갖는 모델
     """
 
+    author = models.ForeignKey(User, on_delete=models.CASCADE)
     subject = models.CharField(max_length=200)
     content = models.TextField()
     create_date = models.DateTimeField()
+    modify_date = models.DateTimeField(null=True, blank=True)
 
     # __str__ 메서드를 추가하면 id 값 대신 제목을 표시할 수 있다.
     def __str__(self):
@@ -22,10 +25,8 @@ class Answer(models.Model):
     Question 모델을 ForeignKey로서 연결한다.
     """
 
-    #
-    # question = models.ForeignKey(
-    #     Question, on_delete=models.CASCADE, related_name="answer_set"
-    # )
+    author = models.ForeignKey(User, on_delete=models.CASCADE)
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
     content = models.TextField()
     create_date = models.DateTimeField()
+    modify_date = models.DateTimeField(null=True, blank=True)
